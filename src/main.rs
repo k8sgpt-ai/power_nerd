@@ -122,27 +122,27 @@ impl eframe::App for MyApp {
             ui.horizontal(|ui| {
                 ui.label("Backend Type:");
                 egui::ComboBox::from_id_source("backend_type")
-                    .selected_text(format!("{}", self.backend))
+                    .selected_text(self.backend.to_string())
                     .show_ui(ui, |ui| {
                         for backend in BACKEND_TYPES {
                             ui.selectable_value(
                                 &mut self.backend,
                                 backend.to_string(),
-                                format!("{}", backend),
+                                backend.to_string(),
                             );
                         }
                     });
                 // checkbox for filter types FILTER_TYPES
                 ui.label("Filter Type:");
                 egui::ComboBox::from_id_source("filter_type")
-                    .selected_text(format!("{}", self.selected_filter))
+                    .selected_text(self.selected_filter.to_string())
                     .show_ui(ui, |ui| {
                         for filter in power_nerd::FILTER_TYPES {
                             // if it's set to None make it empty
                             ui.selectable_value(
                                 &mut self.selected_filter,
                                 filter.to_string(),
-                                format!("{}", filter),
+                                filter.to_string(),
                             );
                             if filter.contains("None") {
                                 self.selected_filter = "".to_string();
