@@ -16,12 +16,14 @@ struct MyApp {
     response_rx: Receiver<AnalyzeResponse>,
     // App state
     is_loading: bool,
+    show_configuration: bool,
     response: AnalyzeResponse,
     backend: String,
     error: String,
+    k8sgpt_connection_url: String,
     // filter array
     selected_filter: String,
-    explain: bool
+    explain: bool,
 }
 fn main() {
     let rt = Runtime::new().expect("Unable to create Runtime");
@@ -51,8 +53,10 @@ impl Default for MyApp {
     fn default() -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
         let (loading_tx, loading_rx) = std::sync::mpsc::channel();
-        let (response_tx, response_rx):  (Sender<AnalyzeResponse>, Receiver<AnalyzeResponse>)= std::sync::mpsc::channel();
-        let (connect_error_tx, connect_error_rx):  (Sender<String>, Receiver<String>)= std::sync::mpsc::channel();
+        let (response_tx, response_rx): (Sender<AnalyzeResponse>, Receiver<AnalyzeResponse>) =
+            std::sync::mpsc::channel();
+        let (connect_error_tx, connect_error_rx): (Sender<String>, Receiver<String>) =
+            std::sync::mpsc::channel();
         Self {
             loading_tx,
             loading_rx,
@@ -61,9 +65,11 @@ impl Default for MyApp {
             response_tx: tx,
             response_rx: rx,
             is_loading: false,
-            backend:  "openai".to_string(),
+            show_configuration: false,
+            backend: "openai".to_string(),
             error: Default::default(),
             response: Default::default(),
+            k8sgpt_connection_url: "http://localhost:8080".to_string(),
             selected_filter: "".to_string(),
             explain: true,
         }
@@ -73,7 +79,6 @@ impl Default for MyApp {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Update the counter with the async response.
-
         if let Ok(loading) = self.loading_rx.try_recv() {
             self.is_loading = loading;
         }
@@ -85,47 +90,71 @@ impl eframe::App for MyApp {
         }
         // Error Popup window ---------------------------------------------------------------------
         if !self.error.is_empty() {
-            egui::Window::new("Error")
-                .open(&mut true)
-                .show(ctx, |ui| {
-                    ui.label(&self.error);
-                });
+            egui::Window::new("Error").open(&mut true).show(ctx, |ui| {
+                ui.label(&self.error);
+            });
             // close window on click
             if ctx.input(|i| i.pointer.any_click()) {
                 self.error = "".to_string();
             }
+        }
+        if self.show_configuration {
+            egui::Window::new("Configure Connection")
+                .open(&mut true)
+                .show(ctx, |ui| {
+                    ui.label("Configure Connection");
+                    // Add a text box for the k8sgpt connection which defaults to http://localhost:8080
+
+                    ui.horizontal(|ui| {
+                        ui.label("URL:");
+                        ui.text_edit_singleline(&mut self.k8sgpt_connection_url);
+                    });
+
+                    if ui.button("Close").clicked() {
+                        self.show_configuration = false;
+                    }
+                });
         }
         // ----------------------------------------------------------------------------------------
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Backend Type:");
                 egui::ComboBox::from_id_source("backend_type")
-                    .selected_text(format!("{:?}", self.backend))
+                    .selected_text(format!("{}", self.backend))
                     .show_ui(ui, |ui| {
                         for backend in BACKEND_TYPES {
-                            ui.selectable_value(&mut self.backend, backend.to_string(), format!("{:?}", backend));
+                            ui.selectable_value(
+                                &mut self.backend,
+                                backend.to_string(),
+                                format!("{:?}", backend),
+                            );
                         }
                     });
                 // checkbox for filter types FILTER_TYPES
                 ui.label("Filter Type:");
                 egui::ComboBox::from_id_source("filter_type")
-                    .selected_text(format!("{:?}", self.selected_filter))
+                    .selected_text(format!("{}", self.selected_filter))
                     .show_ui(ui, |ui| {
                         for filter in power_nerd::FILTER_TYPES {
-
                             // if it's set to None make it empty
-                            ui.selectable_value(&mut self.selected_filter, filter.to_string(), format!("{:?}", filter));
+                            ui.selectable_value(
+                                &mut self.selected_filter,
+                                filter.to_string(),
+                                format!("{:?}", filter),
+                            );
                             if filter.contains("None") {
                                 self.selected_filter = "".to_string();
                             }
-
                         }
                     });
+                if ui.button("Configure Connection").clicked() {
+                    // Open a new window
+                    self.show_configuration = true;
+                }
             });
+
             // explain checkbox
             ui.checkbox(&mut self.explain, "Explain");
-            // if explain is unchecked capture in the self.explain bool
-
         });
         // ----------------------------------------------------------------------------------------
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -135,8 +164,16 @@ impl eframe::App for MyApp {
             }
             if !self.is_loading && ui.button("Analyze").clicked() {
                 self.is_loading = true;
-                send_req(self.loading_tx.clone(), self.backend.clone(),self.selected_filter.clone(),
-                         self.explain,self.response_tx.clone(),self.connect_error_tx.clone(), ctx.clone());
+                send_req(
+                    self.loading_tx.clone(),
+                    self.backend.clone(),
+                    self.selected_filter.clone(),
+                    self.explain,
+                    self.k8sgpt_connection_url.clone(),
+                    self.response_tx.clone(),
+                    self.connect_error_tx.clone(),
+                    ctx.clone(),
+                );
             }
             if !self.response.results.is_empty() {
                 // Display the results
@@ -144,7 +181,6 @@ impl eframe::App for MyApp {
                 // Print results into scrollable area
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     for result in &self.response.results {
-
                         // convert result.error into a string
                         let mut error_message: Vec<String> = vec![];
                         for error in &result.error {
@@ -152,9 +188,20 @@ impl eframe::App for MyApp {
                         }
                         // convert vec to string
                         let error_message = error_message.join("\n");
-                        ui.label(egui::RichText::new(format!("{}:\n", result.name)).heading().color(egui::Color32::from_rgb(255, 255, 255)));
-                        ui.label(egui::RichText::new(format!("{}\n", error_message)).color(egui::Color32::from_rgb(252, 61, 3)));
-                        ui.label(egui::RichText::new(format!("{}\n", result.details)).heading().color(egui::Color32::from_rgb(50, 141, 168)));
+                        ui.label(
+                            egui::RichText::new(format!("{}:\n", result.name))
+                                .heading()
+                                .color(egui::Color32::from_rgb(255, 255, 255)),
+                        );
+                        ui.label(
+                            egui::RichText::new(format!("{}\n", error_message))
+                                .color(egui::Color32::from_rgb(252, 61, 3)),
+                        );
+                        ui.label(
+                            egui::RichText::new(format!("{}\n", result.details))
+                                .heading()
+                                .color(egui::Color32::from_rgb(50, 141, 168)),
+                        );
                     }
                 });
             }
@@ -162,13 +209,22 @@ impl eframe::App for MyApp {
     }
 }
 
-fn send_req(loading_tx: Sender<bool>,backend: String, selected_filter: String, explain: bool,
-            response_tx: Sender<AnalyzeResponse>, connect_error_tx: Sender<String>,  ctx: egui::Context) {
+fn send_req(
+    loading_tx: Sender<bool>,
+    backend: String,
+    selected_filter: String,
+    explain: bool,
+    connection_url: String,
+    response_tx: Sender<AnalyzeResponse>,
+    connect_error_tx: Sender<String>,
+    ctx: egui::Context,
+) {
     tokio::spawn(async move {
-
-        let client = ServerAnalyzerServiceClient::connect("http://localhost:8080").await;
+        let client = ServerAnalyzerServiceClient::connect(connection_url).await;
         if client.is_err() {
-            connect_error_tx.send("Error connecting to server".to_string()).unwrap();
+            connect_error_tx
+                .send("Error connecting to server".to_string())
+                .unwrap();
             loading_tx.send(false).unwrap();
             return;
         }
