@@ -1,6 +1,4 @@
 use eframe::egui;
-use reqwest::Client;
-use serde_derive::{Deserialize, Serialize};
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Duration;
 use k8sgpt_ai_k8sgpt_community_neoeinstein_prost::schema::v1::{AnalyzeRequest, AnalyzeResponse};
@@ -85,28 +83,20 @@ impl eframe::App for MyApp {
         if let Ok(error) = self.connect_error_rx.try_recv() {
             self.error = error;
         }
-
-        // error pop up
-
-        // pop up error
-
+        // Error Popup window ---------------------------------------------------------------------
         if !self.error.is_empty() {
             egui::Window::new("Error")
                 .open(&mut true)
                 .show(ctx, |ui| {
                     ui.label(&self.error);
                 });
-
             // close window on click
-
             if ctx.input(|i| i.pointer.any_click()) {
                 self.error = "".to_string();
             }
         }
+        // ----------------------------------------------------------------------------------------
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // checkbox for backend types from BACKEND_TYPES, openai is on by default
-            // show checkboxes horizontally next to each other
-
             ui.horizontal(|ui| {
                 ui.label("Backend Type:");
                 egui::ComboBox::from_id_source("backend_type")
@@ -134,29 +124,37 @@ impl eframe::App for MyApp {
             });
             // explain checkbox
             ui.checkbox(&mut self.explain, "Explain");
+            // if explain is unchecked capture in the self.explain bool
+
         });
-
+        // ----------------------------------------------------------------------------------------
         egui::CentralPanel::default().show(ctx, |ui| {
-
             if self.is_loading {
                 ui.label("Analyzing...");
                 ui.spinner();
             }
-            if !self.is_loading {
-                if ui.button("Analyze").clicked() {
-                    self.is_loading = true;
-                    send_req(self.loading_tx.clone(), self.backend.clone(),self.selected_filter.clone(),
-                             self.explain.clone(),self.response_tx.clone(),self.connect_error_tx.clone(), ctx.clone());
-                }
+            if !self.is_loading && ui.button("Analyze").clicked() {
+                self.is_loading = true;
+                send_req(self.loading_tx.clone(), self.backend.clone(),self.selected_filter.clone(),
+                         self.explain,self.response_tx.clone(),self.connect_error_tx.clone(), ctx.clone());
             }
-
             if !self.response.results.is_empty() {
                 // Display the results
                 ui.label("Results:");
                 // Print results into scrollable area
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     for result in &self.response.results {
-                        ui.label(format!("{}: {}", result.name, result.details));
+
+                        // convert result.error into a string
+                        let mut error_message: Vec<String> = vec![];
+                        for error in &result.error {
+                            error_message.push(error.text.clone());
+                        }
+                        // convert vec to string
+                        let error_message = error_message.join("\n");
+                        ui.label(egui::RichText::new(format!("{}:\n", result.name)).heading().color(egui::Color32::from_rgb(255, 255, 255)));
+                        ui.label(egui::RichText::new(format!("{}\n", error_message)).color(egui::Color32::from_rgb(252, 61, 3)));
+                        ui.label(egui::RichText::new(format!("{}\n", result.details)).heading().color(egui::Color32::from_rgb(50, 141, 168)));
                     }
                 });
             }
@@ -168,7 +166,7 @@ fn send_req(loading_tx: Sender<bool>,backend: String, selected_filter: String, e
             response_tx: Sender<AnalyzeResponse>, connect_error_tx: Sender<String>,  ctx: egui::Context) {
     tokio::spawn(async move {
 
-        let mut client = ServerAnalyzerServiceClient::connect("http://localhost:8080").await;
+        let client = ServerAnalyzerServiceClient::connect("http://localhost:8080").await;
         if client.is_err() {
             connect_error_tx.send("Error connecting to server".to_string()).unwrap();
             loading_tx.send(false).unwrap();
