@@ -52,7 +52,6 @@ fn main() {
 
 impl Default for MyApp {
     fn default() -> Self {
-        let (tx, rx) = std::sync::mpsc::channel();
         let (loading_tx, loading_rx) = std::sync::mpsc::channel();
         let (response_tx, response_rx): (Sender<AnalyzeResponse>, Receiver<AnalyzeResponse>) =
             std::sync::mpsc::channel();
@@ -63,8 +62,8 @@ impl Default for MyApp {
             loading_rx,
             connect_error_tx,
             connect_error_rx,
-            response_tx: tx,
-            response_rx: rx,
+            response_tx,
+            response_rx,
             is_loading: false,
             show_configuration: false,
             backend: "openai".to_string(),
