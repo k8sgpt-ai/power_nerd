@@ -121,7 +121,7 @@ impl eframe::App for MyApp {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Backend Type:");
-                egui::ComboBox::from_id_source("backend_type")
+                egui::ComboBox::from_id_salt("backend_type")
                     .selected_text(self.backend.to_string())
                     .show_ui(ui, |ui| {
                         for backend in BACKEND_TYPES {
@@ -134,7 +134,7 @@ impl eframe::App for MyApp {
                     });
                 // checkbox for filter types FILTER_TYPES
                 ui.label("Filter Type:");
-                egui::ComboBox::from_id_source("filter_type")
+                egui::ComboBox::from_id_salt("filter_type")
                     .selected_text(self.selected_filter.to_string())
                     .show_ui(ui, |ui| {
                         for filter in power_nerd::FILTER_TYPES {
