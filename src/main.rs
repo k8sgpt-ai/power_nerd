@@ -24,6 +24,7 @@ struct MyApp {
     // filter array
     selected_filter: String,
     explain: bool,
+    cache: bool,
 }
 fn main() {
     let rt = Runtime::new().expect("Unable to create Runtime");
@@ -72,6 +73,7 @@ impl Default for MyApp {
             k8sgpt_connection_url: "http://localhost:8080".to_string(),
             selected_filter: "".to_string(),
             explain: true,
+            cache: true,
         }
     }
 }
@@ -126,7 +128,7 @@ impl eframe::App for MyApp {
                             ui.selectable_value(
                                 &mut self.backend,
                                 backend.to_string(),
-                                format!("{:?}", backend),
+                                format!("{}", backend),
                             );
                         }
                     });
@@ -140,7 +142,7 @@ impl eframe::App for MyApp {
                             ui.selectable_value(
                                 &mut self.selected_filter,
                                 filter.to_string(),
-                                format!("{:?}", filter),
+                                format!("{}", filter),
                             );
                             if filter.contains("None") {
                                 self.selected_filter = "".to_string();
@@ -152,9 +154,13 @@ impl eframe::App for MyApp {
                     self.show_configuration = true;
                 }
             });
+            ui.horizontal(|ui| {
+                // explain checkbox
+                ui.checkbox(&mut self.explain, "Explain");
+                // cache checkbox
+                ui.checkbox(&mut self.cache, "Cache");
+            });
 
-            // explain checkbox
-            ui.checkbox(&mut self.explain, "Explain");
         });
         // ----------------------------------------------------------------------------------------
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -169,6 +175,7 @@ impl eframe::App for MyApp {
                     self.backend.clone(),
                     self.selected_filter.clone(),
                     self.explain,
+                    self.cache,
                     self.k8sgpt_connection_url.clone(),
                     self.response_tx.clone(),
                     self.connect_error_tx.clone(),
@@ -214,6 +221,7 @@ fn send_req(
     backend: String,
     selected_filter: String,
     explain: bool,
+    cache: bool,
     connection_url: String,
     response_tx: Sender<AnalyzeResponse>,
     connect_error_tx: Sender<String>,
@@ -240,7 +248,7 @@ fn send_req(
             namespace: "".to_string(),
             explain,
             anonymize: false,
-            nocache: false,
+            nocache: !cache,
             language: "".to_string(),
             max_concurrency: 0,
             output: "".to_string(),
