@@ -1,0 +1,16 @@
+[package]
+name = "power_nerd"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.30.0"
+egui = "0.30.0"
+env_logger = "0.11.6"
+k8sgpt-ai_k8sgpt_community_neoeinstein-prost = { version = "0.4.0-20241118152629-1379a5a1889d.1", registry = "buf" }
+k8sgpt-ai_k8sgpt_community_neoeinstein-tonic = { version = "0.4.1-20241118152629-1379a5a1889d.1", registry = "buf" }
+reqwest = { version = "0.12.9", features = ["json"] }
+serde = "1"
+serde_derive = "1"
+tokio = { version = "1", features = ["net", "rt-multi-thread"] }
+tonic = "0.12.3"
