@@ -204,9 +204,11 @@ impl eframe::App for MyApp {
                 // connection status
                 ui.label("Connection Status:");
                 if self.is_connected {
-                    ui.label("Connected");
+                    // set color to green
+                    ui.label(egui::RichText::new("Connected").color(egui::Color32::from_rgb(0, 255, 0)));
                 } else {
-                    ui.label("Disconnected");
+                    // set color to yellow
+                    ui.label(egui::RichText::new("Disconnected").color(egui::Color32::from_rgb(255, 255, 0)));
                 }
 
             });
@@ -311,7 +313,15 @@ fn send_req(
             filters,
             label_selector: "".to_string(),
         });
-        let response = client.unwrap().analyze(request).await.unwrap();
+        let response = client.unwrap().analyze(request).await;
+        if response.is_err() {
+            connect_error_tx
+                .send("Error connecting to the Kubernetes cluster".to_string())
+                .unwrap();
+            loading_tx.send(false).unwrap();
+            return;
+        }
+        let response = response.unwrap();
         loading_tx.send(false).unwrap();
 
         response_tx.send(response.into_inner()).unwrap();
