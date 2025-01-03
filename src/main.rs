@@ -14,8 +14,12 @@ struct MyApp {
     connect_error_rx: Receiver<String>,
     response_tx: Sender<AnalyzeResponse>,
     response_rx: Receiver<AnalyzeResponse>,
+    connection_status_tx: Sender<bool>,
+    connection_status_rx: Receiver<bool>,
     // App state
     is_loading: bool,
+    is_connected: bool,
+    is_polling: bool,
     show_configuration: bool,
     response: AnalyzeResponse,
     backend: String,
@@ -37,7 +41,8 @@ fn main() {
     std::thread::spawn(move || {
         rt.block_on(async {
             loop {
-                tokio::time::sleep(Duration::from_secs(3600)).await;
+
+                tokio::time::sleep(Duration::from_secs(30)).await;
             }
         })
     });
@@ -57,6 +62,8 @@ impl Default for MyApp {
             std::sync::mpsc::channel();
         let (connect_error_tx, connect_error_rx): (Sender<String>, Receiver<String>) =
             std::sync::mpsc::channel();
+        let (connection_status_tx, connection_status_rx): (Sender<bool>, Receiver<bool>) =
+            std::sync::mpsc::channel();
         Self {
             loading_tx,
             loading_rx,
@@ -64,7 +71,11 @@ impl Default for MyApp {
             connect_error_rx,
             response_tx,
             response_rx,
+            connection_status_tx,
+            connection_status_rx,
             is_loading: false,
+            is_polling: false,
+            is_connected: false,
             show_configuration: false,
             backend: "openai".to_string(),
             error: Default::default(),
@@ -77,8 +88,42 @@ impl Default for MyApp {
     }
 }
 
+impl MyApp {
+    fn new(cc: &eframe::CreationContext<'_>) -> Self {
+
+        let mut app = Self::default();
+        // Start the background polling for connection status
+        app
+    }
+    fn poll_connection(&mut self) {
+        let connection_status_tx = self.connection_status_tx.clone();
+        let k8sgpt_connection_url = self.k8sgpt_connection_url.clone();
+        tokio::spawn(async move
+            {
+            loop {
+                //Check the connection status
+                let client = ServerAnalyzerServiceClient::connect(k8sgpt_connection_url.clone()).await;
+                let is_connected = client.is_ok();
+                if is_connected {
+                    connection_status_tx.send(true).unwrap();
+                } else {
+                    connection_status_tx.send(false).unwrap();
+                }
+
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        });
+    }
+}
+
 impl eframe::App for MyApp {
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // a very ugly hack
+        if !self.is_polling {
+            self.poll_connection();
+            self.is_polling = true
+        }
         // Update the counter with the async response.
         if let Ok(loading) = self.loading_rx.try_recv() {
             self.is_loading = loading;
@@ -88,6 +133,9 @@ impl eframe::App for MyApp {
         }
         if let Ok(error) = self.connect_error_rx.try_recv() {
             self.error = error;
+        }
+        if let Ok(is_connected) = self.connection_status_rx.try_recv() {
+            self.is_connected = is_connected;
         }
         // Error Popup window ---------------------------------------------------------------------
         if !self.error.is_empty() {
@@ -152,6 +200,15 @@ impl eframe::App for MyApp {
                     // Open a new window
                     self.show_configuration = true;
                 }
+
+                // connection status
+                ui.label("Connection Status:");
+                if self.is_connected {
+                    ui.label("Connected");
+                } else {
+                    ui.label("Disconnected");
+                }
+
             });
             ui.horizontal(|ui| {
                 // explain checkbox
