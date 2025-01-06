@@ -15,9 +15,18 @@ defaults:
 
 jobs:
   release:
-    name: release
+    name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [stable-x86_64-unknown-linux-gnu]
     steps:
       - uses: actions/checkout@master
-      - run: rustup update
-      - run: cargo build --release
+      - run: rustup toolchain install ${{ matrix.target }}
+      - name: Log in to Buf registry
+        env:
+          BUF_TOKEN: ${{ secrets.BUF_TOKEN }}
+        run: |
+          cargo login --registry buf "Bearer $BUF_TOKEN"
+      - run: cargo +${{ matrix.target }} build --release
