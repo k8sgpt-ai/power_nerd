@@ -50,7 +50,7 @@ jobs:
         run: |
           cargo login --registry buf "Bearer $BUF_TOKEN"
       - run: cargo +${{ matrix.target }} build --release
-      - uses: taiki-e/upload-rust-binary-action@v1
+      - uses: actions/upload-artifact@v4
         with:
-          bin: power_nerd
-          token: ${{ secrets.GITHUB_TOKEN }}
+          name: power_nerd-${{ matrix.target}}
+          path: target/release/power_nerd

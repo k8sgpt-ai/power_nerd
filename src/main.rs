@@ -89,7 +89,7 @@ impl Default for MyApp {
 
 impl MyApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let mut app = Self::default();
+        let app = Self::default();
         // Start the background polling for connection status
         app
     }
