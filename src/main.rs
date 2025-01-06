@@ -41,8 +41,7 @@ fn main() {
     std::thread::spawn(move || {
         rt.block_on(async {
             loop {
-
-                tokio::time::sleep(Duration::from_secs(30)).await;
+                tokio::time::sleep(Duration::from_secs(3000)).await;
             }
         })
     });
@@ -90,7 +89,6 @@ impl Default for MyApp {
 
 impl MyApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-
         let mut app = Self::default();
         // Start the background polling for connection status
         app
@@ -109,7 +107,6 @@ impl MyApp {
                 } else {
                     connection_status_tx.send(false).unwrap();
                 }
-
                 tokio::time::sleep(Duration::from_secs(5)).await;
             }
         });
