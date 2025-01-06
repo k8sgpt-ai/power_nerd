@@ -1,0 +1,23 @@
+# Changelog
+
+## [1.1.0](https://github.com/k8sgpt-ai/power_nerd/compare/v1.0.0...v1.1.0) (2025-01-06)
+
+
+### Features
+
+* added connection detection ([9f55e87](https://github.com/k8sgpt-ai/power_nerd/commit/9f55e8708f36972474d4cf802ca4241fa9667588))
+* adding release please ([476abcd](https://github.com/k8sgpt-ai/power_nerd/commit/476abcdf12145588712097be4d95c00ff78560f7))
+* ammended targets ([acfd572](https://github.com/k8sgpt-ai/power_nerd/commit/acfd572cd36c1ab6217596f804d0d56b5e276365))
+* ammended targets ([5bb17e4](https://github.com/k8sgpt-ai/power_nerd/commit/5bb17e4ad9b22372228952ac4cd06da2de1ffe06))
+* first ([ee4c3dd](https://github.com/k8sgpt-ai/power_nerd/commit/ee4c3dd746473081dde1c4bcb703660ed0ab79af))
+* first commit ([f559223](https://github.com/k8sgpt-ai/power_nerd/commit/f5592233b4509c44fff5527bfb7892a3790d084d))
+* formatted ([f7b6c21](https://github.com/k8sgpt-ai/power_nerd/commit/f7b6c219ce118d1831791e184d47a884d06fdb7d))
+* provides error message on connection failure ([5faa10e](https://github.com/k8sgpt-ai/power_nerd/commit/5faa10ea63067a0ec7eae651921ff333d1f5fbde))
+* updated toolchains ([3dce044](https://github.com/k8sgpt-ai/power_nerd/commit/3dce044e669a2e6547cae8328e64acf651f492a4))
+
+
+### Other
+
+* removed old channel ([e0b5e03](https://github.com/k8sgpt-ai/power_nerd/commit/e0b5e03e9468ce3fa634841b82a774e79081e5a5))
+* updated formatting ([6afbb6b](https://github.com/k8sgpt-ai/power_nerd/commit/6afbb6b3d9c7687f0980156bad03207a2a31585b))
+* updated formatting ([adfafe4](https://github.com/k8sgpt-ai/power_nerd/commit/adfafe428c547c5f56d9743fd6b24df7c7fb24dd))
