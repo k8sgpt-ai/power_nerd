@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.5](https://github.com/k8sgpt-ai/power_nerd/compare/v0.0.4...v0.0.5) (2025-01-07)
+
+
+### Other
+
+* modified upload step ([f559c95](https://github.com/k8sgpt-ai/power_nerd/commit/f559c958e0150f69178ea6c5a797b8ef424bb13d))
+
 ## [0.0.4](https://github.com/k8sgpt-ai/power_nerd/compare/v0.0.3...v0.0.4) (2025-01-07)
 
 
