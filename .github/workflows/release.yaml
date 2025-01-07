@@ -34,6 +34,8 @@ jobs:
           default-branch: main
 
   release:
+    permissions:
+      contents: write
     needs: release-please
     name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
@@ -50,7 +52,9 @@ jobs:
         run: |
           cargo login --registry buf "Bearer $BUF_TOKEN"
       - run: cargo +${{ matrix.target }} build --release
-      - uses: actions/upload-artifact@v4
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: power_nerd-${{ matrix.target }}
-          path: target/release/power_nerd
+           files: |
+             target/release/power_nerd
