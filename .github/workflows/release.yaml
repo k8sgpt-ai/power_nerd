@@ -52,5 +52,5 @@ jobs:
       - run: cargo +${{ matrix.target }} build --release
       - uses: actions/upload-artifact@v4
         with:
-          name: power_nerd-${{ matrix.target}}
+          name: power_nerd-${{ matrix.target }}
           path: target/release/power_nerd
