@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.4](https://github.com/k8sgpt-ai/power_nerd/compare/v0.0.3...v0.0.4) (2025-01-07)
+
+
+### Other
+
+* updated readme ([c9a5f8f](https://github.com/k8sgpt-ai/power_nerd/commit/c9a5f8f1dc66dbc96ecb76c289e4ad432bb0e9ef))
+
 ## [0.0.3](https://github.com/k8sgpt-ai/power_nerd/compare/v0.0.2...v0.0.3) (2025-01-06)
 
 
